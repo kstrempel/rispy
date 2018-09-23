@@ -1,9 +1,8 @@
 use std::string::String;
 use std::vec::Vec;
-use std::num::ParseIntError;
 
 #[derive(Debug)]
-enum Token {
+pub enum Token {
     Atom(String),
     Subs(Vec<Token>)
 }
@@ -11,25 +10,23 @@ enum Token {
 #[derive(Debug)]
 pub struct Parser {
     tokens : Vec<String>,
-    tree : Vec<Token>
+    pub tree : Vec<Token>
 }
 
 impl Parser {
 
-    pub fn new() -> Parser {
-        Parser{tokens: Vec::new(), tree: Vec::new()}
+    pub fn parse(code : &str) -> Parser {
+        let mut result = Parser{tokens: Vec::new(), tree: Vec::new()};
+        result.tokenize(code);
+        result.tree = result.read_from_token();
+        result
     }
 
-    pub fn tokenize(&mut self, code: String) {
+    fn tokenize(&mut self, code: &str) {
         let code_with_spaces = code.replace("(", "( ").replace(")", " )");
         for token in code_with_spaces.split(" "){
             self.tokens.push(String::from(token));
         }
-    }
-
-    pub fn parse(&mut self) -> Result<(), ParseIntError> {
-        self.tree = self.read_from_token();
-        Ok(())
     }
 
     fn read_from_token(&mut self) -> Vec<Token> {
@@ -51,17 +48,6 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use parser::{Parser, Token};
-
-    #[test]
-    fn test_tokenizer(){
-        let mut parser = Parser::new();
-        parser.tokenize(String::from("(begin (define r 10) (* pi (* r r)))"));
-        assert_eq!(parser.tokens[0], "(");
-        assert_eq!(parser.tokens[1], "begin");
-        assert_eq!(parser.tokens[2], "(");
-        assert_eq!(parser.tokens[3], "define");
-        assert_eq!(parser.tokens[4], "r");
-    }
 
     fn check_define(subs: &Vec<Token>){
         match subs[0] {
@@ -113,9 +99,7 @@ mod tests {
 
     #[test]
     fn test_parser(){
-        let mut parser = Parser::new();
-        parser.tokenize(String::from("(begin (define r 10) (* pi (* r r)))"));
-        assert!(parser.parse().is_ok());
+        let parser = Parser::parse("(begin (define r 10) (* pi (* r r)))");
         match parser.tree[0] {
             Token::Subs(ref c) => check_begin(c),
             _ => assert!(false)

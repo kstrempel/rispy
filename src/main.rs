@@ -1,6 +1,9 @@
-pub mod parser;
+mod runtime;
+mod parser;
+
+use runtime::Runtime;
 
 fn main() {
-    println!("Hello, rispy!");
-    let _parser = parser::Parser::new();
+    let runtime = Runtime::eval("(+ 10 10)");
+    println!("{:?}", runtime);
 }
