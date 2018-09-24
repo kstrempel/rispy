@@ -1,9 +1,14 @@
+extern crate regex;
+
 use std::string::String;
 use std::vec::Vec;
+
+use regex::Regex;
 
 #[derive(Debug)]
 pub enum Token {
     Atom(String),
+    AtomString(String),
     Subs(Vec<Token>)
 }
 
@@ -29,6 +34,16 @@ impl Parser {
         }
     }
 
+
+    fn analyse_atom(&self, token_block: &str) -> Token {
+        let regex = Regex::new(r#""(?P<token>.*)""#).unwrap();
+        let cap = regex.captures(token_block);
+        match cap {
+            Some(content) => Token::AtomString(String::from(content.name("token").unwrap().as_str())),
+            _ => Token::Atom(String::from(token_block))
+        }
+    }
+
     fn read_from_token(&mut self) -> Vec<Token> {
         let mut token : Vec<Token> = Vec::new();
 
@@ -37,7 +52,10 @@ impl Parser {
             match token_block.as_str() {
                 "(" => token.push(Token::Subs(self.read_from_token())),
                 ")" => return token,
-                _ => token.push(Token::Atom(token_block))
+                _ => {
+                    let atom = self.analyse_atom(&token_block);
+                    token.push(atom)
+                }
             }
         };
 

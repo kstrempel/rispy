@@ -1,5 +1,4 @@
 use std::vec::IntoIter;
-use std::ops::Add;
 use parser::{Parser, Token};
 
 
@@ -24,7 +23,8 @@ impl Runtime {
         while let Some(token) = iter.next() {
             match token {
                 Token::Atom(symbol) => return self.match_atom(symbol, iter),
-                Token::Subs(subs) => return self.eval_parser(subs)
+                Token::Subs(subs) => return self.eval_parser(subs),
+                _ => return Runtime::None
             }
         }
 
@@ -38,8 +38,8 @@ impl Runtime {
                 let mut result = String::new();
                 while let Some(token) = iter.next() {
                     match token {
-                        Token::Atom(symbol) => result.push_str(symbol.as_str()),
-                        _ => result.push_str("no subs")
+                        Token::AtomString(symbol) => result.push_str(symbol.as_str()),
+                        _ => result.push_str("Wrong parameters for 'cons'")
                     };
                 };
                 return Runtime::Str(result)
@@ -57,11 +57,11 @@ mod test {
 
     #[test]
     fn test_addition() {
-        let runtime = Runtime::eval("(cons \"Hello \" \"du\" \"da\")");
+        let runtime = Runtime::eval(r#"(cons "Hello" "du" "da")"#);
         match runtime {
             Runtime::None => assert!(true),
-            Runtime::Str(result) => assert_eq!(result, String::from("Hello du da")),
-            _ => assert!(false, "It's not none")
+            Runtime::Str(result) => assert_eq!(result, String::from("Helloduda")),
+            _ => assert!(false, "It's not a string")
         }
     }
 }
