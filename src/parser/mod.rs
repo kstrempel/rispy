@@ -28,9 +28,45 @@ impl Parser {
     }
 
     fn tokenize(&mut self, code: &str) {
-        let code_with_spaces = code.replace("(", "( ").replace(")", " )");
-        for token in code_with_spaces.split(" "){
-            self.tokens.push(String::from(token));
+        let mut token = String::new();
+        let mut inside_string = false;
+        for c in code.chars() {
+            match c {
+                '(' => {
+                    if !token.is_empty() {
+                        self.tokens.push(token.clone());
+                    }
+                    self.tokens.push(String::from("("));
+                },
+                ')' => {
+                    if !token.is_empty() {
+                        self.tokens.push(token.clone());
+                        token.clear();
+                    }
+                    self.tokens.push(String::from(")"));
+                },
+                '"' => {
+                    token.push(c);
+                    if inside_string {
+                        self.tokens.push(token.clone());
+                        token.clear();
+                        inside_string = false;
+                    } else {
+                        inside_string = true;
+                    }
+                },
+                ' ' => {
+                    if inside_string {
+                        token.push(c);
+                    } else {
+                        if !token.is_empty(){
+                            self.tokens.push(token.clone());
+                        }
+                        token.clear();
+                    }
+                },
+                _ => token.push(c)
+            }
         }
     }
 
@@ -46,7 +82,6 @@ impl Parser {
 
     fn read_from_token(&mut self) -> Vec<Token> {
         let mut token : Vec<Token> = Vec::new();
-
         while !self.tokens.is_empty() {
             let token_block = self.tokens.remove(0);
             match token_block.as_str() {

@@ -57,10 +57,10 @@ mod test {
 
     #[test]
     fn test_addition() {
-        let runtime = Runtime::eval(r#"(cons "Hello" "du" "da")"#);
+        let runtime = Runtime::eval(r#"(cons "Hello " "du " "da")"#);
         match runtime {
-            Runtime::None => assert!(true),
-            Runtime::Str(result) => assert_eq!(result, String::from("Helloduda")),
+            Runtime::None => assert!(false),
+            Runtime::Str(result) => assert_eq!(result, String::from("Hello du da")),
             _ => assert!(false, "It's not a string")
         }
     }
