@@ -5,9 +5,10 @@ use parser::{Parser, Token};
 #[derive(Debug)]
 pub enum Runtime {
     None,
-    Int(i32),
+    Int(i64),
     Str(String),
-    Func()
+    Func(),
+    Error()
 }
 
 impl Runtime {
@@ -38,16 +39,27 @@ impl Runtime {
                 let mut result = String::new();
                 while let Some(token) = iter.next() {
                     match token {
-                        Token::AtomString(symbol) => result.push_str(symbol.as_str()),
+                        Token::AtomString(atom) => result.push_str(atom.as_str()),
                         _ => result.push_str("Wrong parameters for 'cons'")
                     };
                 };
-                return Runtime::Str(result)
+                Runtime::Str(result)
             },
-            _ => println!("unknown atom")
+            "+" => {
+                let mut result = 0;
+                while let Some(token) = iter.next() {
+                    match token {
+                        Token::AtomInt(atom) => result += atom,
+                        _ => println!("Panic")
+                    };
+                };
+                Runtime::Int(result)
+            },
+            _ => {
+                println!("unknown atom");
+                Runtime::Error()
+            }
         }
-
-        Runtime::None
     }
 }
 
@@ -56,7 +68,7 @@ mod test {
     use runtime::Runtime;
 
     #[test]
-    fn test_addition() {
+    fn test_cons() {
         let runtime = Runtime::eval(r#"(cons "Hello " "du " "da")"#);
         match runtime {
             Runtime::None => assert!(false),
@@ -64,4 +76,15 @@ mod test {
             _ => assert!(false, "It's not a string")
         }
     }
+
+    #[test]
+    fn test_add() {
+        let runtime = Runtime::eval(r#"(+ 10 20 30 40)"#);
+        match runtime {
+            Runtime::None => assert!(false),
+            Runtime::Int(result) => assert_eq!(result, 100),
+            _ => assert!(false, "NaN")
+        }
+    }
+
 }

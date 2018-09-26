@@ -3,12 +3,14 @@ extern crate regex;
 use std::string::String;
 use std::vec::Vec;
 
-use regex::Regex;
+use regex::RegexSet;
 
 #[derive(Debug)]
 pub enum Token {
     Atom(String),
     AtomString(String),
+    AtomInt(i64),
+    AtomFloat(f64),
     Subs(Vec<Token>)
 }
 
@@ -70,12 +72,28 @@ impl Parser {
         }
     }
 
-
     fn analyse_atom(&self, token_block: &str) -> Token {
-        let regex = Regex::new(r#""(?P<token>.*)""#).unwrap();
-        let cap = regex.captures(token_block);
-        match cap {
-            Some(content) => Token::AtomString(String::from(content.name("token").unwrap().as_str())),
+        let set = RegexSet::new(&[
+            r#"".*""#,              // 0 string
+            r"\d+",                 // 1 decimal
+            r"\d+\.\d+",            // 2 float
+            r".+"]).unwrap();       // 3 the rest
+
+        let matches : Vec<_> = set.matches(token_block).into_iter().collect();
+        match matches[0] {
+            0 => {
+                let token = String::from(token_block);
+                let len = token.len() - 1;
+                Token::AtomString(String::from(&token[1..len]))
+            },
+            1 => {
+                let num : i64 = token_block.parse().unwrap();
+                Token::AtomInt(num)
+            },
+            2 => {
+                let num : f64 = token_block.parse().unwrap();
+                Token::AtomFloat(num)
+            }
             _ => Token::Atom(String::from(token_block))
         }
     }
@@ -114,7 +132,7 @@ mod tests {
         }
 
         match subs[2] {
-            Token::Atom(ref c) => assert_eq!("10", c),
+            Token::AtomInt(c) => assert_eq!(10, c),
             _ => assert!(false, "10")
         }
     }
@@ -132,8 +150,6 @@ mod tests {
     }
 
     fn check_begin(subs: &Vec<Token>){
-        println!("check begin {:?}", subs);
-
         match subs[0] {
             Token::Atom(ref c) => assert_eq!("begin", c),
             _ => assert!(false, "No begin")
