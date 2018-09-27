@@ -1,90 +1,106 @@
+mod environment;
+
 use std::vec::IntoIter;
+
 use parser::{Parser, Token};
 
+use self::environment::{Environment, ResultValue};
 
-#[derive(Debug)]
-pub enum Runtime {
-    None,
-    Int(i64),
-    Str(String),
-    Func(),
-    Error()
+
+pub fn eval(code: &str) -> ResultValue {
+    let parser = Parser::parse(code);
+    let mut environment = Environment::new_empty();
+    eval_parser(environment, parser.tree)
 }
 
-impl Runtime {
-
-    pub fn eval(code: &str) -> Runtime {
-        let runtime = Runtime::None;
-        let parser = Parser::parse(code);
-        runtime.eval_parser(parser.tree)
-    }
-
-    fn eval_parser(self, tree: Vec<Token>) -> Runtime {
-        let mut iter = tree.into_iter();
-        while let Some(token) = iter.next() {
-            match token {
-                Token::Atom(symbol) => return self.match_atom(symbol, iter),
-                Token::Subs(subs) => return self.eval_parser(subs),
-                _ => return Runtime::None
-            }
+fn eval_parser(mut environment: Environment, tree: Vec<Token>) -> ResultValue {
+    let mut iter = tree.into_iter();
+    while let Some(token) = iter.next() {
+        match token {
+            Token::Atom(symbol) => return match_atom(symbol, iter),
+            Token::Subs(subs) => return eval_parser(environment, subs),
+            _ => return ResultValue::None
         }
-
-        Runtime::None
     }
 
-    fn match_atom(self, symbol: String, mut iter: IntoIter<Token>) -> Runtime {
-        let str_symbol = symbol.as_str();
-        match str_symbol {
-            "cons" => {
-                let mut result = String::new();
-                while let Some(token) = iter.next() {
-                    match token {
-                        Token::AtomString(atom) => result.push_str(atom.as_str()),
-                        _ => result.push_str("Wrong parameters for 'cons'")
-                    };
+    ResultValue::None
+}
+
+fn match_atom(symbol: String, mut iter: IntoIter<Token>) -> ResultValue {
+    let str_symbol = symbol.as_str();
+    match str_symbol {
+        "cons" => {
+            let mut result = String::new();
+            while let Some(token) = iter.next() {
+                match token {
+                    Token::AtomString(atom) => result.push_str(atom.as_str()),
+                    _ => result.push_str("Wrong parameters for 'cons'")
                 };
-                Runtime::Str(result)
-            },
-            "+" => {
-                let mut result = 0;
-                while let Some(token) = iter.next() {
-                    match token {
-                        Token::AtomInt(atom) => result += atom,
-                        _ => println!("Panic")
-                    };
+            };
+            ResultValue::Str(result)
+        },
+        "+" => {
+            let mut result = 0;
+            while let Some(token) = iter.next() {
+                match token {
+                    Token::AtomInt(atom) => result += atom,
+                    Token::Subs(tokens) => {
+                        let mut environment = Environment::new_empty();
+                        let result_value = eval_parser(environment, tokens);
+                        match result_value {
+                            ResultValue::Int(atom) => result += atom,
+                            _ => println!("Panic")
+                        }
+                    },
+                    _ => println!("Panic")
                 };
-                Runtime::Int(result)
-            },
-            _ => {
-                println!("unknown atom");
-                Runtime::Error()
-            }
+            };
+            ResultValue::Int(result)
+        },
+        _ => {
+            println!("unknown atom");
+            ResultValue::Error()
         }
     }
 }
+
 
 #[cfg(test)]
 mod test {
-    use runtime::Runtime;
+    use runtime::eval;
+    use runtime::ResultValue;
 
     #[test]
     fn test_cons() {
-        let runtime = Runtime::eval(r#"(cons "Hello " "du " "da")"#);
+        let runtime = eval(r#"(cons "Hello " "du " "da")"#);
         match runtime {
-            Runtime::None => assert!(false),
-            Runtime::Str(result) => assert_eq!(result, String::from("Hello du da")),
+            ResultValue::None => assert!(false),
+            ResultValue::Str(result) => assert_eq!(result, String::from("Hello du da")),
             _ => assert!(false, "It's not a string")
         }
     }
 
     #[test]
     fn test_add() {
-        let runtime = Runtime::eval(r#"(+ 10 20 30 40)"#);
+        let runtime = eval(r#"(+ 10 20 30 40)"#);
         match runtime {
-            Runtime::None => assert!(false),
-            Runtime::Int(result) => assert_eq!(result, 100),
+            ResultValue::None => assert!(false),
+            ResultValue::Int(result) => assert_eq!(result, 100),
             _ => assert!(false, "NaN")
         }
     }
+
+   #[test]
+    fn test_add_nested() {
+        let runtime = eval(r#"
+        (+ 10 20
+           (+ 30 40))"#);
+        match runtime {
+            ResultValue::None => assert!(false),
+            ResultValue::Int(result) => assert_eq!(result, 100),
+            _ => assert!(false, "NaN")
+        }
+    }
+
 
 }

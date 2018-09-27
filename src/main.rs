@@ -3,9 +3,9 @@ extern crate regex;
 mod runtime;
 mod parser;
 
-use runtime::Runtime;
+use runtime::eval;
 
 fn main() {
-    let runtime = Runtime::eval(r#"(cons "Hello " "du " "da ")"#);
+    let runtime = eval(r#"(cons "Hello " "du " "da ")"#);
     println!("{:?}", runtime);
 }

@@ -57,7 +57,7 @@ impl Parser {
                         inside_string = true;
                     }
                 },
-                ' ' => {
+                ' '|'\n' => {
                     if inside_string {
                         token.push(c);
                     } else {
