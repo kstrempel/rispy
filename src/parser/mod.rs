@@ -75,8 +75,8 @@ impl Parser {
     fn analyse_atom(&self, token_block: &str) -> Token {
         let set = RegexSet::new(&[
             r#"".*""#,              // 0 string
-            r"\d+",                 // 1 decimal
             r"\d+\.\d+",            // 2 float
+            r"\d+",                 // 1 decimal
             r".+"]).unwrap();       // 3 the rest
 
         let matches : Vec<_> = set.matches(token_block).into_iter().collect();
@@ -87,13 +87,13 @@ impl Parser {
                 Token::AtomString(String::from(&token[1..len]))
             },
             1 => {
+                let num : f64 = token_block.parse().unwrap();
+                Token::AtomFloat(num)
+            },
+            2 => {
                 let num : i64 = token_block.parse().unwrap();
                 Token::AtomInt(num)
             },
-            2 => {
-                let num : f64 = token_block.parse().unwrap();
-                Token::AtomFloat(num)
-            }
             _ => Token::Atom(String::from(token_block))
         }
     }

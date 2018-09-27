@@ -5,6 +5,7 @@ use std::collections::HashMap;
 pub enum ResultValue {
     None,
     Int(i64),
+    Float(f64),
     Str(String),
     Func(),
     Error()
