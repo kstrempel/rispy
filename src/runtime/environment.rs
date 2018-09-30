@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::boxed::Box;
+use std::rc::Rc;
 
 
 #[derive(Debug)]
@@ -12,19 +14,21 @@ pub enum ResultValue {
 }
 
 #[derive(Debug)]
-pub struct Environment {
-    parent: Box<Option<Environment>>,
+pub struct Environment<'a> {
+    parent: Option<&'a Environment<'a>>,
     values: HashMap<String, ResultValue>
 }
 
-impl Environment {
+impl<'a> Environment<'a> {
 
-    fn new(parent: Option<Environment>) -> Environment {
-        Environment{parent: Box::new(parent), values: HashMap::new()}
+    pub fn child(&'a self) -> Self {
+        Environment{parent: Some(self),
+                    values: HashMap::new()}
     }
 
-    pub fn new_empty() -> Environment {
-        Environment::new(Option::None)
+    pub fn new() -> Self {
+        Environment{parent: Option::None,
+                    values: HashMap::new()}
     }
 
 }
