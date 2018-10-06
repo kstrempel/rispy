@@ -1,12 +1,12 @@
-pub mod environment;
+pub mod vm;
 
 use parser::Parser;
 
-use self::environment::{Environment, ResultValue};
+use self::vm::{Machine, ResultValue};
 
 pub fn eval<'a>(code: &str) -> ResultValue {
     let parser = Parser::parse(code);
-    let mut environment = Environment::new();
+    let mut environment = Machine::new();
     environment.eval_parser(&parser.tree)
 }
 
@@ -35,8 +35,8 @@ mod test {
     fn test_define() {
         let runtime = eval(r#"(define r 30)"#);
         match runtime {
-            ResultValue::None => assert!(false),
-            ResultValue::Error(_) => assert!(true),
+            ResultValue::None => assert!(true),
+            ResultValue::Error(_) => assert!(false),
             _ => {
                 println!("{:?} Error", runtime);
                 assert!(false, "No error");
