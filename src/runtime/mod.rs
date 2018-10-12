@@ -1,4 +1,4 @@
-mod environment;
+pub mod environment;
 
 use std::slice::Iter;
 
