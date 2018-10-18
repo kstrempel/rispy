@@ -9,12 +9,12 @@ use std::io::prelude::*;
 use std::io::Error;
 
 use runtime::eval;
-use runtime::vm::ResultValue;
+use runtime::value::Value;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() > 1 {
-        let runtime: Result<ResultValue, Error> = File::open(&args[1])
+        let runtime: Result<Value, Error> = File::open(&args[1])
             .and_then(|mut f| {
                 let mut content = String::new();
                 f.read_to_string(&mut content)
