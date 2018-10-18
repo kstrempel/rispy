@@ -1,8 +1,10 @@
 pub mod vm;
+pub mod value;
 
 use parser::Parser;
+use self::value::Value;
+use self::vm::Machine;
 
-use self::vm::{Machine, Value};
 
 pub fn eval<'a>(code: &str) -> Value {
     let parser = Parser::parse(code);
@@ -17,7 +19,23 @@ mod test {
     use runtime::Value;
 
   #[test]
-    fn test_define_with_add() {
+    fn test_define_with_add_string() {
+        let runtime = eval(r#"
+        (define r "Hello")
+        (cons r " " "World")"#);
+        match runtime {
+            Value::None => assert!(false),
+            Value::Str(result) => assert_eq!(result, "Hello World"),
+            _ => {
+                println!("{:?} Not a string", runtime);
+                assert!(false, "NaN");
+            }
+        }
+    }
+
+
+  #[test]
+    fn test_define_with_add_numbers() {
         let runtime = eval(r#"
         (define r 30)
         (+ r 40)"#);

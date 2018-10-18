@@ -1,23 +1,15 @@
 use std::collections::HashMap;
 use std::slice::Iter;
 
-use parser::Token;
-
-#[derive(Debug)]
-pub enum Value {
-    None,
-    Int(i64),
-    Float(f64),
-    Str(String),
-    Func(),
-    Error(String),
-}
+use parser::token::Token;
+use runtime::value::Value;
 
 
 #[derive(Debug)]
 pub struct Machine {
     environment: Vec<HashMap<String, Value>>,
 }
+
 
 impl Machine {
     pub fn new() -> Self {
@@ -42,11 +34,7 @@ impl Machine {
         Err(String::from("unknown variable name"))
     }
 
-    pub fn set_namespace_value(
-        &mut self,
-        name: String,
-        value: Value,
-    ) -> Result<(), String> {
+    pub fn set_namespace_value(&mut self, name: String, value: Value) -> Result<(), String> {
         if self.environment[0].contains_key(&name) {
             Err(String::from("Variable already exsists"))
         } else {
@@ -85,7 +73,24 @@ impl Machine {
                 let mut result = String::new();
                 while let Some(token) = iter.next() {
                     match token {
-                        Token::AtomString(atom) => result.push_str(atom.as_str()),
+                        Token::AtomString(s) => result.push_str(s.as_str()),
+                        Token::Atom(var_name) => {
+                            println!("{:?}", self.environment);
+                            let value = self.get_variable(var_name).unwrap();
+                            match value {
+                                Value::Str(s) => result.push_str(s.as_str()),
+                                Value::Error(error) => println!("{}", error),
+                                _ => println!("Panic"),
+                            }
+                        },
+                        Token::Subs(tokens) => {
+                            let value = self.eval_parser(tokens);
+                            match value {
+                                Value::Str(s) => result.push_str(s.as_str()),
+                                Value::Error(error) => println!("{}", error),
+                                _ => println!("Panic"),
+                            }
+                        },
                         _ => result.push_str("Wrong parameters for 'cons'"),
                     };
                 }
@@ -102,7 +107,6 @@ impl Machine {
                             result += atom
                         }
                         Token::Atom(var_name) => {
-                            println!("{:?}", var_name);
                             let value = self.get_variable(var_name).unwrap();
                             match value {
                                 Value::Int(atom) => result += *atom as f64,
@@ -115,8 +119,8 @@ impl Machine {
                             }
                         }
                         Token::Subs(tokens) => {
-                            let result_value = self.eval_parser(tokens);
-                            match result_value {
+                            let value = self.eval_parser(tokens);
+                            match value {
                                 Value::Int(atom) => result += atom as f64,
                                 Value::Float(atom) => {
                                     int_only = false;
@@ -155,22 +159,12 @@ impl Machine {
         }
     }
 
-    fn get_name_and_result(
-        name: Option<&Token>,
-        value: Option<&Token>,
-    ) -> Result<(String, Value), Value> {
+    fn get_name_and_result(name: Option<&Token>, value: Option<&Token>) -> Result<(String, Value), String> {
         let token_name = name.expect("error in define - name");
         let token_value = value.expect("error in define - value");
 
-        let name = match token_name {
-            Token::Atom(name) => name.clone(),
-            _ => String::from("_")
-        };
-
-        let value = match token_value {
-            Token::AtomInt(value) => Value::Int(*value),
-            _ => Value::Error(String::from("Error in define - value type"))
-        };
+        let name = token_name.atom_2_string().unwrap();
+        let value = token_value.token_2_value().unwrap();
 
         Ok((name, value))
     }

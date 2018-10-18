@@ -1,19 +1,13 @@
 extern crate regex;
 
-use std::string::String;
+pub mod token;
+
 use std::vec::Vec;
 
 use regex::RegexSet;
 
+use parser::token::Token;
 
-#[derive(Debug)]
-pub enum Token {
-    Atom(String),
-    AtomString(String),
-    AtomInt(i64),
-    AtomFloat(f64),
-    Subs(Vec<Token>)
-}
 
 #[derive(Debug)]
 pub struct Parser {
