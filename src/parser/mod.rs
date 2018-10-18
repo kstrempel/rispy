@@ -5,6 +5,7 @@ use std::vec::Vec;
 
 use regex::RegexSet;
 
+
 #[derive(Debug)]
 pub enum Token {
     Atom(String),

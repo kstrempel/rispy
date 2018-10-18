@@ -4,7 +4,7 @@ use std::slice::Iter;
 use parser::Token;
 
 #[derive(Debug)]
-pub enum ResultValue {
+pub enum Value {
     None,
     Int(i64),
     Float(f64),
@@ -13,14 +13,10 @@ pub enum ResultValue {
     Error(String),
 }
 
-impl ResultValue {
-
-}
-
 
 #[derive(Debug)]
 pub struct Machine {
-    environment: Vec<HashMap<String, ResultValue>>,
+    environment: Vec<HashMap<String, Value>>,
 }
 
 impl Machine {
@@ -38,7 +34,7 @@ impl Machine {
         self.environment.push(HashMap::new());
     }
 
-    pub fn get_variable(&self, name: &String) -> Result<&ResultValue, String> {
+    pub fn get_variable(&self, name: &String) -> Result<&Value, String> {
         if let Some(result_value) = self.environment[0].get(name) {
             return Ok(result_value);
         }
@@ -49,7 +45,7 @@ impl Machine {
     pub fn set_namespace_value(
         &mut self,
         name: String,
-        value: ResultValue,
+        value: Value,
     ) -> Result<(), String> {
         if self.environment[0].contains_key(&name) {
             Err(String::from("Variable already exsists"))
@@ -59,9 +55,9 @@ impl Machine {
         }
     }
 
-    pub fn eval_parser(&mut self, tree: &Vec<Token>) -> ResultValue {
+    pub fn eval_parser(&mut self, tree: &Vec<Token>) -> Value {
         let mut iter = tree.into_iter();
-        let mut result = ResultValue::None;
+        let mut result = Value::None;
         self.push_environment();
         while let Some(token) = iter.next() {
             match token {
@@ -73,7 +69,7 @@ impl Machine {
                 }
                 _ => {
                     println!("Panic at {:?}", tree);
-                    result = ResultValue::None;
+                    result = Value::None;
                 }
             }
         }
@@ -82,7 +78,7 @@ impl Machine {
         result
     }
 
-    fn match_atom(&mut self, symbol: &String, iter: &mut Iter<Token>) -> ResultValue {
+    fn match_atom(&mut self, symbol: &String, iter: &mut Iter<Token>) -> Value {
         let str_symbol = symbol.as_str();
         match str_symbol {
             "cons" => {
@@ -93,7 +89,7 @@ impl Machine {
                         _ => result.push_str("Wrong parameters for 'cons'"),
                     };
                 }
-                ResultValue::Str(result)
+                Value::Str(result)
             }
             "+" => {
                 let mut result = 0.0;
@@ -109,20 +105,20 @@ impl Machine {
                             println!("{:?}", var_name);
                             let value = self.get_variable(var_name).unwrap();
                             match value {
-                                ResultValue::Int(atom) => result += *atom as f64,
-                                ResultValue::Float(atom) => {
+                                Value::Int(atom) => result += *atom as f64,
+                                Value::Float(atom) => {
                                     int_only = false;
                                     result += atom
                                 }
-                                ResultValue::Error(error) => println!("{}", error),
+                                Value::Error(error) => println!("{}", error),
                                 _ => println!("Panic"),
                             }
                         }
                         Token::Subs(tokens) => {
                             let result_value = self.eval_parser(tokens);
                             match result_value {
-                                ResultValue::Int(atom) => result += atom as f64,
-                                ResultValue::Float(atom) => {
+                                Value::Int(atom) => result += atom as f64,
+                                Value::Float(atom) => {
                                     int_only = false;
                                     result += atom
                                 }
@@ -133,36 +129,36 @@ impl Machine {
                     };
                 }
                 if int_only {
-                    ResultValue::Int(result as i64)
+                    Value::Int(result as i64)
                 } else {
-                    ResultValue::Float(result)
+                    Value::Float(result)
                 }
             }
             "define" => {
                 let name = iter.next();
                 let value = iter.next();
                 if let Some(_) = iter.next() {
-                    ResultValue::Error(String::from("Panic to many parameters for define"))
+                    Value::Error(String::from("Panic to many parameters for define"))
                 } else {
                     match Machine::get_name_and_result(name, value) {
                         Ok((name, value)) => {
                             match self.set_namespace_value(name, value) {
-                                Ok(_) => ResultValue::None,
-                                Err(e) => ResultValue::Error(e)
+                                Ok(_) => Value::None,
+                                Err(e) => Value::Error(e)
                             }
                         },
-                        _ => ResultValue::Error(String::from("error in define"))
+                        _ => Value::Error(String::from("error in define"))
                     }
                 }
             }
-            _ => ResultValue::Error(String::from("unknown atom")),
+            _ => Value::Error(String::from("unknown atom")),
         }
     }
 
     fn get_name_and_result(
         name: Option<&Token>,
         value: Option<&Token>,
-    ) -> Result<(String, ResultValue), ResultValue> {
+    ) -> Result<(String, Value), Value> {
         let token_name = name.expect("error in define - name");
         let token_value = value.expect("error in define - value");
 
@@ -172,8 +168,8 @@ impl Machine {
         };
 
         let value = match token_value {
-            Token::AtomInt(value) => ResultValue::Int(*value),
-            _ => ResultValue::Error(String::from("Error in define - value type"))
+            Token::AtomInt(value) => Value::Int(*value),
+            _ => Value::Error(String::from("Error in define - value type"))
         };
 
         Ok((name, value))
