@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::slice::Iter;
 
-use runtime::value::Token;
+use runtime::tokens::Token;
 
 
 #[derive(Debug)]
