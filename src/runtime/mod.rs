@@ -2,11 +2,11 @@ pub mod vm;
 pub mod value;
 
 use parser::Parser;
-use self::value::Value;
+use self::value::Token;
 use self::vm::Machine;
 
 
-pub fn eval<'a>(code: &str) -> Value {
+pub fn eval<'a>(code: &str) -> Token {
     let parser = Parser::parse(code);
     let mut environment = Machine::new();
     environment.eval_parser(&parser.tree)
@@ -16,7 +16,7 @@ pub fn eval<'a>(code: &str) -> Value {
 #[cfg(test)]
 mod test {
     use runtime::eval;
-    use runtime::Value;
+    use runtime::value::Token;
 
   #[test]
     fn test_define_with_add_string() {
@@ -24,8 +24,8 @@ mod test {
         (define r "Hello")
         (cons r " " "World")"#);
         match runtime {
-            Value::None => assert!(false),
-            Value::Str(result) => assert_eq!(result, "Hello World"),
+            Token::None => assert!(false),
+            Token::Str(result) => assert_eq!(result, "Hello World"),
             _ => {
                 println!("{:?} Not a string", runtime);
                 assert!(false, "NaN");
@@ -40,8 +40,8 @@ mod test {
         (define r 30)
         (+ r 40)"#);
         match runtime {
-            Value::None => assert!(false),
-            Value::Int(result) => assert_eq!(result, 70),
+            Token::None => assert!(false),
+            Token::Int(result) => assert_eq!(result, 70),
             _ => {
                 println!("{:?} Nan", runtime);
                 assert!(false, "NaN");
@@ -53,8 +53,8 @@ mod test {
     fn test_define() {
         let runtime = eval(r#"(define r 30)"#);
         match runtime {
-            Value::None => assert!(true),
-            Value::Error(_) => assert!(false),
+            Token::None => assert!(true),
+            Token::Error(_) => assert!(false),
             _ => {
                 println!("{:?} Error", runtime);
                 assert!(false, "No error");
@@ -68,8 +68,8 @@ mod test {
     fn test_define_too_many_parameters() {
         let runtime = eval(r#"(define r 30 40)"#);
         match runtime {
-            Value::None => assert!(false),
-            Value::Error(_result) => assert!(true),
+            Token::None => assert!(false),
+            Token::Error(_result) => assert!(true),
             _ => {
                 println!("{:?} Error", runtime);
                 assert!(false, "No error");
@@ -81,8 +81,8 @@ mod test {
     fn test_cons() {
         let runtime = eval(r#"(cons "Hello " "du " "da")"#);
         match runtime {
-            Value::None => assert!(false),
-            Value::Str(result) => assert_eq!(*result, String::from("Hello du da")),
+            Token::None => assert!(false),
+            Token::Str(result) => assert_eq!(*result, String::from("Hello du da")),
             _ => assert!(false, "It's not a string")
         }
     }
@@ -91,8 +91,8 @@ mod test {
     fn test_add() {
         let runtime = eval(r#"(+ 10 20 30 40)"#);
         match runtime {
-            Value::None => assert!(false),
-            Value::Int(result) => assert_eq!(result, 100),
+            Token::None => assert!(false),
+            Token::Int(result) => assert_eq!(result, 100),
             _ => assert!(false, "NaN")
         }
     }
@@ -103,8 +103,8 @@ mod test {
         (+ 10 20
            (+ 30 40))"#);
         match runtime {
-            Value::None => assert!(false),
-            Value::Int(result) => assert_eq!(result, 100),
+            Token::None => assert!(false),
+            Token::Int(result) => assert_eq!(result, 100),
             _ => assert!(false, "NaN")
         }
     }
@@ -116,8 +116,8 @@ mod test {
         (+ 10 20.5
            (+ 30 40.5))"#);
         match runtime {
-            Value::None => assert!(false),
-            Value::Float(result) => assert_eq!(result, 101.0),
+            Token::None => assert!(false),
+            Token::Float(result) => assert_eq!(result, 101.0),
             _ => assert!(false, "NaN")
         }
     }

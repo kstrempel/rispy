@@ -1,12 +1,9 @@
 extern crate regex;
 
-pub mod token;
-
 use std::vec::Vec;
-
 use regex::RegexSet;
 
-use parser::token::Token;
+use runtime::value::Token;
 
 
 #[derive(Debug)]
@@ -79,15 +76,15 @@ impl Parser {
             0 => {
                 let token = String::from(token_block);
                 let len = token.len() - 1;
-                Token::AtomString(String::from(&token[1..len]))
+                Token::Str(String::from(&token[1..len]))
             },
             1 => {
                 let num : f64 = token_block.parse().unwrap();
-                Token::AtomFloat(num)
+                Token::Float(num)
             },
             2 => {
                 let num : i64 = token_block.parse().unwrap();
-                Token::AtomInt(num)
+                Token::Int(num)
             },
             _ => Token::Atom(String::from(token_block))
         }
@@ -98,7 +95,7 @@ impl Parser {
         while !self.tokens.is_empty() {
             let token_block = self.tokens.remove(0);
             match token_block.as_str() {
-                "(" => token.push(Token::Subs(self.read_from_token())),
+                "(" => token.push(Token::Block(self.read_from_token())),
                 ")" => return token,
                 _ => {
                     let atom = self.analyse_atom(&token_block);
@@ -127,7 +124,7 @@ mod tests {
         }
 
         match subs[2] {
-            Token::AtomInt(c) => assert_eq!(10, c),
+            Token::Int(c) => assert_eq!(10, c),
             _ => assert!(false, "10")
         }
     }
@@ -151,12 +148,12 @@ mod tests {
         }
 
         match subs[1] {
-            Token::Subs(ref c) => check_define(c),
+            Token::Block(ref c) => check_define(c),
             _ => assert!(false, "Check define")
         }
 
         match subs[2] {
-            Token::Subs(ref c) => check_pi(c),
+            Token::Block(ref c) => check_pi(c),
             _ => assert!(false, "Check pi")
         }
     }
@@ -165,7 +162,7 @@ mod tests {
     fn test_parser(){
         let parser = Parser::parse("(begin (define r 10) (* pi (* r r)))");
         match parser.tree[0] {
-            Token::Subs(ref c) => check_begin(c),
+            Token::Block(ref c) => check_begin(c),
             _ => assert!(false)
         }
     }

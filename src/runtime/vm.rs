@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 use std::slice::Iter;
 
-use parser::token::Token;
-use runtime::value::Value;
+use runtime::value::Token;
 
 
 #[derive(Debug)]
 pub struct Machine {
-    environment: Vec<HashMap<String, Value>>,
+    environment: Vec<HashMap<String, Token>>,
 }
 
 
@@ -26,7 +25,7 @@ impl Machine {
         self.environment.push(HashMap::new());
     }
 
-    pub fn get_variable(&self, name: &String) -> Result<&Value, String> {
+    pub fn get_variable(&self, name: &String) -> Result<&Token, String> {
         if let Some(result_value) = self.environment[0].get(name) {
             return Ok(result_value);
         }
@@ -34,7 +33,7 @@ impl Machine {
         Err(String::from("unknown variable name"))
     }
 
-    pub fn set_namespace_value(&mut self, name: String, value: Value) -> Result<(), String> {
+    pub fn set_namespace_value(&mut self, name: String, value: Token) -> Result<(), String> {
         if self.environment[0].contains_key(&name) {
             Err(String::from("Variable already exsists"))
         } else {
@@ -43,21 +42,21 @@ impl Machine {
         }
     }
 
-    pub fn eval_parser(&mut self, tree: &Vec<Token>) -> Value {
+    pub fn eval_parser(&mut self, tree: &Vec<Token>) -> Token {
         let mut iter = tree.into_iter();
-        let mut result = Value::None;
+        let mut result = Token::None;
         self.push_environment();
         while let Some(token) = iter.next() {
             match token {
                 Token::Atom(symbol) => {
                     result = self.match_atom(symbol, &mut iter);
                 }
-                Token::Subs(subs) => {
+                Token::Block(subs) => {
                     result = self.eval_parser(subs);
                 }
                 _ => {
                     println!("Panic at {:?}", tree);
-                    result = Value::None;
+                    result = Token::None;
                 }
             }
         }
@@ -66,63 +65,63 @@ impl Machine {
         result
     }
 
-    fn match_atom(&mut self, symbol: &String, iter: &mut Iter<Token>) -> Value {
+    fn match_atom(&mut self, symbol: &String, iter: &mut Iter<Token>) -> Token {
         let str_symbol = symbol.as_str();
         match str_symbol {
             "cons" => {
                 let mut result = String::new();
                 while let Some(token) = iter.next() {
                     match token {
-                        Token::AtomString(s) => result.push_str(s.as_str()),
+                        Token::Str(s) => result.push_str(s.as_str()),
                         Token::Atom(var_name) => {
                             println!("{:?}", self.environment);
-                            let value = self.get_variable(var_name).unwrap();
-                            match value {
-                                Value::Str(s) => result.push_str(s.as_str()),
-                                Value::Error(error) => println!("{}", error),
+                            let token = self.get_variable(var_name).unwrap();
+                            match token {
+                                Token::Str(s) => result.push_str(s.as_str()),
+                                Token::Error(error) => println!("{}", error),
                                 _ => println!("Panic"),
                             }
                         },
-                        Token::Subs(tokens) => {
+                        Token::Block(tokens) => {
                             let value = self.eval_parser(tokens);
                             match value {
-                                Value::Str(s) => result.push_str(s.as_str()),
-                                Value::Error(error) => println!("{}", error),
+                                Token::Str(s) => result.push_str(s.as_str()),
+                                Token::Error(error) => println!("{}", error),
                                 _ => println!("Panic"),
                             }
                         },
                         _ => result.push_str("Wrong parameters for 'cons'"),
                     };
                 }
-                Value::Str(result)
+                Token::Str(result)
             }
             "+" => {
                 let mut result = 0.0;
                 let mut int_only = true;
                 while let Some(token) = iter.next() {
                     match token {
-                        Token::AtomInt(atom) => result += *atom as f64,
-                        Token::AtomFloat(atom) => {
+                        Token::Int(atom) => result += *atom as f64,
+                        Token::Float(atom) => {
                             int_only = false;
                             result += atom
                         }
                         Token::Atom(var_name) => {
-                            let value = self.get_variable(var_name).unwrap();
-                            match value {
-                                Value::Int(atom) => result += *atom as f64,
-                                Value::Float(atom) => {
+                            let token = self.get_variable(var_name).unwrap();
+                            match token {
+                                Token::Int(atom) => result += *atom as f64,
+                                Token::Float(atom) => {
                                     int_only = false;
                                     result += atom
                                 }
-                                Value::Error(error) => println!("{}", error),
+                                Token::Error(error) => println!("{}", error),
                                 _ => println!("Panic"),
                             }
                         }
-                        Token::Subs(tokens) => {
+                        Token::Block(tokens) => {
                             let value = self.eval_parser(tokens);
                             match value {
-                                Value::Int(atom) => result += atom as f64,
-                                Value::Float(atom) => {
+                                Token::Int(atom) => result += atom as f64,
+                                Token::Float(atom) => {
                                     int_only = false;
                                     result += atom
                                 }
@@ -133,39 +132,38 @@ impl Machine {
                     };
                 }
                 if int_only {
-                    Value::Int(result as i64)
+                    Token::Int(result as i64)
                 } else {
-                    Value::Float(result)
+                    Token::Float(result)
                 }
             }
             "define" => {
                 let name = iter.next();
                 let value = iter.next();
                 if let Some(_) = iter.next() {
-                    Value::Error(String::from("Panic to many parameters for define"))
+                    Token::Error(String::from("Panic to many parameters for define"))
                 } else {
                     match Machine::get_name_and_result(name, value) {
                         Ok((name, value)) => {
                             match self.set_namespace_value(name, value) {
-                                Ok(_) => Value::None,
-                                Err(e) => Value::Error(e)
+                                Ok(_) => Token::None,
+                                Err(e) => Token::Error(e)
                             }
                         },
-                        _ => Value::Error(String::from("error in define"))
+                        _ => Token::Error(String::from("error in define"))
                     }
                 }
             }
-            _ => Value::Error(String::from("unknown atom")),
+            _ => Token::Error(String::from("unknown atom")),
         }
     }
 
-    fn get_name_and_result(name: Option<&Token>, value: Option<&Token>) -> Result<(String, Value), String> {
+    fn get_name_and_result(name: Option<&Token>, value: Option<&Token>) -> Result<(String, Token), String> {
         let token_name = name.expect("error in define - name");
         let token_value = value.expect("error in define - value");
 
         let name = token_name.atom_2_string().unwrap();
-        let value = token_value.token_2_value().unwrap();
 
-        Ok((name, value))
+        Ok((name, token_value.clone()))
     }
 }
