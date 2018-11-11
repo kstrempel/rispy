@@ -1,9 +1,11 @@
 pub mod vm;
 pub mod tokens;
+mod standard;
+mod environment;
 
 use parser::Parser;
 use self::tokens::Token;
-use self::vm::Machine;
+use self::environment::Machine;
 
 
 pub fn eval<'a>(code: &str) -> Token {
