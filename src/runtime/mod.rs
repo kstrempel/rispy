@@ -1,9 +1,11 @@
 pub mod vm;
-pub mod value;
+pub mod tokens;
+mod standard;
+mod environment;
 
 use parser::Parser;
-use self::value::Token;
-use self::vm::Machine;
+use self::tokens::Token;
+use self::environment::Machine;
 
 
 pub fn eval<'a>(code: &str) -> Token {
@@ -16,7 +18,7 @@ pub fn eval<'a>(code: &str) -> Token {
 #[cfg(test)]
 mod test {
     use runtime::eval;
-    use runtime::value::Token;
+    use runtime::tokens::Token;
 
   #[test]
     fn test_define_with_add_string() {

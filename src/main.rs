@@ -9,7 +9,7 @@ use std::io::prelude::*;
 use std::io::Error;
 
 use runtime::eval;
-use runtime::value::Token;
+use runtime::tokens::Token;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

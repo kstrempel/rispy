@@ -3,7 +3,7 @@ extern crate regex;
 use std::vec::Vec;
 use regex::RegexSet;
 
-use runtime::value::Token;
+use runtime::tokens::Token;
 
 
 #[derive(Debug)]
