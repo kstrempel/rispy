@@ -62,13 +62,18 @@ impl Parser {
                 _ => token.push(c)
             }
         }
+        if !token.is_empty(){
+            self.tokens.push(token.clone());
+        }
     }
 
     fn analyse_atom(&self, token_block: &str) -> Token {
         let set = RegexSet::new(&[
             r#"".*""#,              // 0 string
-            r"\d+\.\d+",            // 2 float
-            r"\d+",                 // 1 decimal
+            r"\d+\.\d+",            // 1 float
+            r"\d+",                 // 2 decimal
+            r"true",                // 3 true
+            r"false",               // 4 false
             r".+"]).unwrap();       // 3 the rest
 
         let matches : Vec<_> = set.matches(token_block).into_iter().collect();
@@ -86,6 +91,8 @@ impl Parser {
                 let num : i64 = token_block.parse().unwrap();
                 Token::Int(num)
             },
+            3 => Token::Boolean(true),
+            4 => Token::Boolean(false),
             _ => Token::Atom(String::from(token_block))
         }
     }
@@ -166,4 +173,23 @@ mod tests {
             _ => assert!(false)
         }
     }
+
+    #[test]
+    fn test_boolean_true(){
+        let parser = Parser::parse("true");
+        match parser.tree[0] {
+            Token::Boolean(t) => assert_eq!(true, t),
+            _ => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_boolean_false(){
+        let parser = Parser::parse("false");
+        match parser.tree[0] {
+            Token::Boolean(t) => assert_eq!(false, t),
+            _ => assert!(false)
+        }
+    }
+
 }

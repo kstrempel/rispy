@@ -12,7 +12,7 @@ impl Machine {
             "+" => self.plus(iter),
             "-" => self.minus(iter),
             "define" => self.define(iter),
-            _ => Token::Error(String::from("unknown atom")),
+            _ => Token::Error(String::from("unknown atom"))
         }
     }
 
