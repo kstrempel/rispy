@@ -16,8 +16,7 @@ impl Machine {
                     result = self.eval_parser(subs);
                 }
                 _ => {
-                    println!("Panic at {:?}", tree);
-                    result = Token::None;
+                    println!("{:?}", token);
                 }
             }
         }

@@ -8,6 +8,7 @@ pub enum Token {
     Float(f64),
     Str(String),
     Atom(String),
+    Boolean(bool),
     Func(),
     Block(Vec<Token>),
     Error(String),
@@ -30,9 +31,10 @@ impl Clone for Token {
             Token::Int(i) => Token::Int(*i),
             Token::Str(s) => Token::Str(s.clone()),
             Token::Atom(s) => Token::Atom(s.clone()),
+            Token::Boolean(b) => Token::Boolean(*b),
             Token::Func() => Token::Func(),
             Token::Block(vec) => Token::Block(vec.clone()),
-            Token::Error(s) => Token::Error(s.clone())
+            Token::Error(s) => Token::Error(s.clone()),
         }
     }
 }
