@@ -10,6 +10,7 @@ impl Machine {
         match str_symbol {
             "cons" => self.cons(iter),
             "+" => self.plus(iter),
+            "-" => self.minus(iter),
             "define" => self.define(iter),
             _ => Token::Error(String::from("unknown atom")),
         }
@@ -21,7 +22,6 @@ impl Machine {
             match token {
                 Token::Str(s) => result.push_str(s.as_str()),
                 Token::Atom(var_name) => {
-                    println!("{:?}", self.environment);
                     let token = self.get_variable(var_name).unwrap();
                     match token {
                         Token::Str(s) => result.push_str(s.as_str()),
@@ -85,6 +85,82 @@ impl Machine {
             Token::Float(result)
         }
     }
+
+    fn minus(&mut self, iter: &mut Iter<Token>) -> Token {
+        let mut result = 0.0;
+        let mut int_only = true;
+        let mut first = true;
+        while let Some(token) = iter.next() {
+            match token {
+                Token::Int(atom) => {
+                    if first {
+                        result = *atom as f64
+                    }else{
+                        result -= *atom as f64
+                    }
+                },
+                Token::Float(atom) => {
+                    int_only = false;
+                    if first {
+                        result = *atom
+                    }else{
+                        result -= atom
+                    }
+                }
+                Token::Atom(var_name) => {
+                    let token = self.get_variable(var_name).unwrap();
+                    match token {
+                        Token::Int(atom) => {
+                            if first{
+                                result = *atom as f64
+                            }else{
+                                result -= *atom as f64
+                            }
+                        }
+                        Token::Float(atom) => {
+                            int_only = false;
+                            if first {
+                                result = *atom
+                            } else {
+                                result -= atom
+                            }
+                        }
+                        Token::Error(error) => println!("{}", error),
+                        _ => println!("Panic"),
+                    }
+                }
+                Token::Block(tokens) => {
+                    let value = self.eval_parser(tokens);
+                    match value {
+                        Token::Int(atom) => {
+                            if first {
+                                result = atom as f64
+                            } else {
+                                result -= atom as f64
+                            }
+                        },
+                        Token::Float(atom) => {
+                            int_only = false;
+                            if first {
+                                result = atom
+                            } else {
+                                result -= atom
+                            }
+                        }
+                        _ => println!("Panic"),
+                    }
+                }
+                _ => println!("Panic"),
+            };
+            first = false;
+        }
+        if int_only {
+            Token::Int(result as i64)
+        } else {
+            Token::Float(result)
+        }
+    }
+
 
     fn define(&mut self, iter: &mut Iter<Token>) -> Token {
         let name = iter.next();
