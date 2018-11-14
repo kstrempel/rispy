@@ -124,4 +124,36 @@ mod test {
         }
     }
 
+   #[test]
+    fn test_minus() {
+        let runtime = eval(r#"(- 10 40)"#);
+        match runtime {
+            Token::None => assert!(false),
+            Token::Int(result) => assert_eq!(result, -30),
+            _ => assert!(false, "NaN")
+        }
+    }
+
+   #[test]
+    fn test_minus_nested_with_float() {
+        let runtime = eval(r#"
+        (- 10 20.5
+           (- 30 40.5))"#);
+        match runtime {
+            Token::None => assert!(false),
+            Token::Float(result) => assert_eq!(result, 0.0),
+            _ => assert!(false, "NaN")
+        }
+    }
+
+   #[test]
+    fn test_minus_with_float() {
+        let runtime = eval(r#"(- 10.5 40)"#);
+        match runtime {
+            Token::None => assert!(false),
+            Token::Float(result) => assert_eq!(result, -29.5),
+            _ => assert!(false, "NaN")
+        }
+    }
+
 }
